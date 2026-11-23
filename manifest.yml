@@ -1,0 +1,114 @@
+modules:
+  rovo:agent:
+    - key: stalesignal-agent
+      name: StaleSignal
+      description: Finds stale Jira work and explains why each item stalled, using Teamwork Graph context.
+      prompt: resource:agent-prompt;agent-prompt.md
+      conversationStarters:
+        - What work has gone stale in my project?
+        - Why has this work item stalled?
+        - Give me a stale-work digest for my team
+      actions:
+        - find-stale-issues
+        - explain-stall
+        - stale-team-digest
+
+  rovo:mcp:
+    - key: stalesignal-mcp
+      name: StaleSignal MCP
+      tools:
+        - find-stale-issues
+        - explain-stall
+        - stale-team-digest
+
+  action:
+    - key: find-stale-issues
+      name: Find stale issues
+      function: findStaleIssues
+      actionVerb: GET
+      description: |
+        Lists Jira work items that have not been updated for a given number of days
+        (default 14), optionally limited to one project. Use it for "what has gone
+        stale", "what work is stuck", or "show me neglected issues in PROJ".
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: A Jira project key such as PROJ. Leave empty to search all projects the user can see.
+        daysStale:
+          title: Days without an update
+          type: number
+          required: false
+          description: Minimum days since the last update. Default 14.
+        maxResults:
+          title: Maximum results
+          type: number
+          required: false
+          description: Maximum issues to return, 1 to 25. Default 10.
+
+    - key: explain-stall
+      name: Explain why an item stalled
+      function: explainStall
+      actionVerb: GET
+      description: |
+        For one Jira work item, explains why it stalled: days without an update,
+        whether it is blocked by open work, whether the assignee is spread across
+        many teams or missing, recent comment activity, and linked goals — all read
+        from Jira and Teamwork Graph. Use it for "why has X stalled" or "what is
+        blocking this".
+      inputs:
+        issueKey:
+          title: Work item key
+          type: string
+          required: false
+          description: The Jira work item key, for example PROJ-12. Leave empty to use the work item open on screen.
+
+    - key: stale-team-digest
+      name: Stale work digest for a team
+      function: staleTeamDigest
+      actionVerb: GET
+      description: |
+        For an Atlassian team the asker belongs to, lists each member's stale work
+        items (not updated in the given days) with counts. Use it for "what is
+        stalling in my team" or "give me a stale digest for the Platform team".
+      inputs:
+        team:
+          title: Team name
+          type: string
+          required: false
+          description: The team's name, or part of it. Leave empty for the asker's first team.
+        daysStale:
+          title: Days without an update
+          type: number
+          required: false
+          description: Minimum days since the last update. Default 14.
+
+  function:
+    - key: findStaleIssues
+      handler: index.findStaleIssues
+    - key: explainStall
+      handler: index.explainStall
+    - key: staleTeamDigest
+      handler: index.staleTeamDigest
+
+resources:
+  - key: agent-prompt
+    path: prompts
+
+permissions:
+  scopes:
+    - read:jira-work
+    - read:jira-user
+    - read:graph:issue:jira
+    - read:graph:issue-comment:jira
+    - read:graph:goal:atlassian
+    - read:graph:user:atlassian
+    - read:graph:team:atlassian
+
+app:
+  runtime:
+    name: nodejs22.x
+  # Placeholder app id. After `forge login`, run `forge register` (or recreate
+  # the app with `forge create`) and replace this with the real app id.
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000

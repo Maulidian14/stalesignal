@@ -1,0 +1,1 @@
+{"dependencies":{"@forge/api":"^8.4.0"},"description":"StaleSignal — a Rovo agent that finds stale Jira work and explains why each item stalled, using Teamwork Graph context. Built for Codegeist 2026.","license":"MIT","main":"src/index.js","name":"stalesignal","scripts":{"lint":"forge lint","test":"node tests/run.mjs"},"type":"module","version":"0.1.0"}
