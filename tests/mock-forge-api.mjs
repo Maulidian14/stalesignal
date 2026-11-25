@@ -75,7 +75,9 @@ const asUser = () => ({
       const issues = isDigest
         ? [fakeIssue("PROJ-77", 18, "Budi Builder")]
         : [fakeIssue("PROJ-12", 20, "Budi Builder"), fakeIssue("PROJ-15", 16, null)];
-      return { ok: true, status: 200, json: async () => ({ issues, total: issues.length }) };
+      // Like the real /search/jql endpoint: no `total` field, only isLast.
+      // Regression cover for the staleCount: 0 bug (24 Nov 2026).
+      return { ok: true, status: 200, json: async () => ({ issues, isLast: true }) };
     }
     if (String(path).includes("/rest/api/3/issue/PROJ-12")) {
       return { ok: true, status: 200, json: async () => proj12 };

@@ -50,7 +50,15 @@ async function searchIssues(jql, maxResults) {
   }
 
   const body = await res.json();
-  return { issues: Array.isArray(body.issues) ? body.issues : [], total: body.total || 0 };
+  const issues = Array.isArray(body.issues) ? body.issues : [];
+  // The new /search/jql endpoint omits `total` (it returns isLast +
+  // nextPageToken instead), so a missing total must fall back to the
+  // page size — otherwise staleCount reports 0 while items are returned.
+  return {
+    issues,
+    total: Number.isFinite(body.total) ? body.total : issues.length,
+    isLast: body.isLast,
+  };
 }
 
 const staleRow = (issue) => ({
@@ -83,6 +91,8 @@ export async function findStaleIssues(payload) {
   const items = result.issues.map(staleRow);
   if (result.total > items.length) {
     notes.push(`showing the ${items.length} stalest of ${result.total} matching items`);
+  } else if (result.isLast === false) {
+    notes.push(`showing the ${items.length} stalest — more matching items exist`);
   }
 
   log("find-stale-issues", { ms: Date.now() - t0, days, project: project || null, found: result.total });
